@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChakraProvider, Flex, Box, Container, Divider, Text, extendTheme, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, useDisclosure, VStack, Button } from '@chakra-ui/react'
+import { ChakraProvider, Flex, Box, Container, Divider, Text, extendTheme, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, useDisclosure, VStack, Button, useToast, Grid, GridItem } from '@chakra-ui/react'
 import Hero from './components/Hero'
 import CaptionForm from './components/Form'
 import CaptionList from './components/CaptionList'
@@ -7,7 +7,6 @@ import PricingPlans from './components/PricingPlans'
 import Features from './components/Features'
 import Testimonials from './components/Testimonials'
 import Footer from './components/Footer'
-import FormPreview from './components/FormPreview'
 import { generateCaptions } from './utils/ai'
 
 // Custom theme
@@ -48,6 +47,7 @@ export default function App() {
   const [isFreeTier, setIsFreeTier] = useState(true);
   const [formData, setFormData] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
   // Load remaining uses from localStorage on mount
   useEffect(() => {
@@ -78,6 +78,37 @@ export default function App() {
       }
     } catch (error) {
       console.error('Error generating captions:', error);
+      
+      // Show appropriate error message based on error type
+      let errorMessage = 'An error occurred while generating captions.';
+      let errorStatus = 'error';
+      
+      if (error.name === 'AIError') {
+        switch (error.type) {
+          case 'RATE_LIMIT_EXCEEDED':
+            errorMessage = 'Too many requests. Please try again in a minute.';
+            break;
+          case 'AUTHENTICATION_ERROR':
+            errorMessage = 'API key error. Please check your configuration.';
+            break;
+          case 'NETWORK_ERROR':
+            errorMessage = 'Network error. Please check your connection.';
+            break;
+          case 'SERVER_ERROR':
+            errorMessage = 'Service temporarily unavailable. Please try again later.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+      }
+
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        status: errorStatus,
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -104,6 +135,37 @@ export default function App() {
       }
     } catch (error) {
       console.error('Error regenerating captions:', error);
+      
+      // Show appropriate error message based on error type
+      let errorMessage = 'An error occurred while regenerating captions.';
+      let errorStatus = 'error';
+      
+      if (error.name === 'AIError') {
+        switch (error.type) {
+          case 'RATE_LIMIT_EXCEEDED':
+            errorMessage = 'Too many requests. Please try again in a minute.';
+            break;
+          case 'AUTHENTICATION_ERROR':
+            errorMessage = 'API key error. Please check your configuration.';
+            break;
+          case 'NETWORK_ERROR':
+            errorMessage = 'Network error. Please check your connection.';
+            break;
+          case 'SERVER_ERROR':
+            errorMessage = 'Service temporarily unavailable. Please try again later.';
+            break;
+          default:
+            errorMessage = error.message;
+        }
+      }
+
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        status: errorStatus,
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -111,18 +173,13 @@ export default function App() {
 
   const handleTryNow = () => {
     setShowForm(true);
-    // Use setTimeout to ensure the form is rendered before scrolling
+    // Scroll to the form section
     setTimeout(() => {
       const formElement = document.querySelector('#caption-form');
       if (formElement) {
         formElement.scrollIntoView({ behavior: 'smooth' });
       }
     }, 100);
-  };
-
-  const handleSelectTemplate = (templateData) => {
-    setFormData(templateData);
-    handleTryNow();
   };
 
   return (
@@ -132,41 +189,37 @@ export default function App() {
         
         <Container maxW="container.xl" py={10} px={{ base: 4, md: 8 }} flex="1">
           {showForm ? (
-            <VStack spacing={8} align="stretch">
-              <Box 
-                w="100%"
-                maxW="800px"
-                mx="auto"
-                bg="white"
-                borderRadius="xl"
-                boxShadow="xl"
-                p={{ base: 6, md: 8 }}
-                position="relative"
-              >
-                {isFreeTier && (
-                  <Text 
-                    position="absolute" 
-                    top={4} 
-                    right={4} 
-                    fontSize="sm" 
-                    color="gray.500"
-                    fontWeight="medium"
-                    bg="gray.50"
-                    px={3}
-                    py={1}
-                    borderRadius="full"
-                  >
-                    {remainingUses} free {remainingUses === 1 ? 'use' : 'uses'} remaining
-                  </Text>
-                )}
-                <CaptionForm onSubmit={handleFormSubmit} initialData={formData} />
-              </Box>
-
-              {captions.length > 0 && (
+            <Grid templateColumns="repeat(2, 1fr)" gap={8} mb={8}>
+              <GridItem>
                 <Box 
-                  w="100%"
-                  maxW="800px"
-                  mx="auto"
+                  bg="white"
+                  borderRadius="xl"
+                  boxShadow="xl"
+                  p={{ base: 6, md: 8 }}
+                  position="relative"
+                >
+                  {isFreeTier && (
+                    <Text 
+                      position="absolute" 
+                      top={4} 
+                      right={4} 
+                      fontSize="sm" 
+                      color="gray.500"
+                      fontWeight="medium"
+                      bg="gray.50"
+                      px={3}
+                      py={1}
+                      borderRadius="full"
+                    >
+                      {remainingUses} free {remainingUses === 1 ? 'use' : 'uses'} remaining
+                    </Text>
+                  )}
+                  <CaptionForm onSubmit={handleFormSubmit} initialData={formData} />
+                </Box>
+              </GridItem>
+              
+              <GridItem>
+                <Box 
                   bg="white"
                   borderRadius="xl"
                   boxShadow="xl"
@@ -178,11 +231,9 @@ export default function App() {
                     onRegenerate={handleRegenerate} 
                   />
                 </Box>
-              )}
-            </VStack>
-          ) : (
-            <FormPreview onTryNow={handleTryNow} onSelectTemplate={handleSelectTemplate} />
-          )}
+              </GridItem>
+            </Grid>
+          ) : null}
           
           <Divider my={10} />
           
