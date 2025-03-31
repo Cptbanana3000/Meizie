@@ -1,6 +1,7 @@
-import { Box, Heading, Text, Image, VStack, Container, Flex, Badge } from '@chakra-ui/react';
+import { Box, Heading, Text, Image, VStack, Container, Flex, Badge, Button, Icon } from '@chakra-ui/react';
+import { FaArrowRight } from 'react-icons/fa';
 
-export default function Hero() {
+export default function Hero({ onTryNow }) {
   return (
     <Box 
       py={16} 
@@ -42,7 +43,7 @@ export default function Hero() {
           gap={{ base: 10, md: 4 }}
         >
           <VStack align={{ base: "center", md: "flex-start" }} spacing={6} maxW={{ base: "100%", md: "60%" }}>
-            <Flex align="center" mb={2}>
+            <Flex align="center" mb={2} position="relative">
               <Heading 
                 as="h1" 
                 size="2xl" 
@@ -67,6 +68,51 @@ export default function Hero() {
             <Text fontSize="xl" opacity="0.9">
               Perfect for Shopify, Amazon, and Instagram stores. Turn product details into engaging captions that sell.
             </Text>
+
+            <Flex gap={4} direction={{ base: "column", sm: "row" }} w={{ base: "100%", sm: "auto" }}>
+              <Button
+                size="lg"
+                colorScheme="accent"
+                onClick={onTryNow}
+                rightIcon={<Icon as={FaArrowRight} />}
+                _hover={{
+                  transform: "translateY(-2px)",
+                  boxShadow: "xl",
+                }}
+                transition="all 0.2s"
+              >
+                Try For Free
+              </Button>
+              <Box position="relative" alignSelf="center">
+                <Badge
+                  colorScheme="green"
+                  fontSize="md"
+                  px={3}
+                  py={1}
+                  borderRadius="full"
+                  textTransform="none"
+                  fontWeight="medium"
+                  bg="green.400"
+                  color="white"
+                >
+                  3 Free Generations
+                </Badge>
+                <Box
+                  position="absolute"
+                  top="-8px"
+                  right="-8px"
+                  bg="yellow.400"
+                  color="gray.800"
+                  borderRadius="full"
+                  fontSize="xs"
+                  px={2}
+                  py={0.5}
+                  fontWeight="bold"
+                >
+                  NEW
+                </Box>
+              </Box>
+            </Flex>
           </VStack>
           
           <Box 

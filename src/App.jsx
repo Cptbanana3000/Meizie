@@ -1,15 +1,14 @@
-import { useState } from 'react'
-import { ChakraProvider, Flex, Box, Container, Divider, Text, extendTheme } from '@chakra-ui/react'
+import { useState, useEffect } from 'react'
+import { ChakraProvider, Flex, Box, Container, Divider, Text, extendTheme, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, useDisclosure, VStack, Button } from '@chakra-ui/react'
 import Hero from './components/Hero'
 import CaptionForm from './components/Form'
 import CaptionList from './components/CaptionList'
-import Paywall from './components/Paywall'
 import PricingPlans from './components/PricingPlans'
 import Features from './components/Features'
 import Testimonials from './components/Testimonials'
 import Footer from './components/Footer'
+import FormPreview from './components/FormPreview'
 import { generateCaptions } from './utils/ai'
-import { useUsageTracker } from './hooks/useAnalytics'
 
 // Custom theme
 const theme = extendTheme({
@@ -41,99 +40,149 @@ const theme = extendTheme({
   },
 });
 
-function App() {
+export default function App() {
   const [captions, setCaptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [remainingUses, setRemainingUses] = useState(3);
+  const [isFreeTier, setIsFreeTier] = useState(true);
   const [formData, setFormData] = useState(null);
-  const { showPaywall, trackUsage, dismissPaywall, remainingUses, isFreeTier } = useUsageTracker();
-  
-  const handleFormSubmit = async (data) => {
-    // Check if user can generate captions
-    const canGenerate = trackUsage(); 
-    if (!canGenerate) {
-      return; // Don't proceed if usage limit reached
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Load remaining uses from localStorage on mount
+  useEffect(() => {
+    const savedUses = localStorage.getItem('remainingUses');
+    if (savedUses) {
+      setRemainingUses(parseInt(savedUses));
     }
-    
-    setLoading(true);
-    setFormData(data);
-    
-    try {
-      const generatedCaptions = await generateCaptions(data);
-      setCaptions(generatedCaptions);
-    } catch (error) {
-      console.error('Error generating captions:', error);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+  }, []);
+
+  const handleFormSubmit = async (formData) => {
+    if (remainingUses <= 0) {
+      onOpen();
+      return;
     }
-  };
-  
-  const handleRegenerate = async () => {
-    if (!formData) return;
-    
-    // Check if user can generate captions
-    const canGenerate = trackUsage();
-    if (!canGenerate) {
-      return; // Don't proceed if usage limit reached
-    }
-    
+
     setLoading(true);
     try {
       const generatedCaptions = await generateCaptions(formData);
       setCaptions(generatedCaptions);
+      
+      // Update remaining uses
+      const newRemainingUses = remainingUses - 1;
+      setRemainingUses(newRemainingUses);
+      localStorage.setItem('remainingUses', newRemainingUses.toString());
+      
+      if (newRemainingUses === 0) {
+        onOpen();
+      }
     } catch (error) {
-      console.error('Error regenerating captions:', error);
-      alert('Something went wrong. Please try again.');
+      console.error('Error generating captions:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRegenerate = async (formData) => {
+    if (remainingUses <= 0) {
+      onOpen();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const generatedCaptions = await generateCaptions(formData);
+      setCaptions(generatedCaptions);
+      
+      // Update remaining uses
+      const newRemainingUses = remainingUses - 1;
+      setRemainingUses(newRemainingUses);
+      localStorage.setItem('remainingUses', newRemainingUses.toString());
+      
+      if (newRemainingUses === 0) {
+        onOpen();
+      }
+    } catch (error) {
+      console.error('Error regenerating captions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTryNow = () => {
+    setShowForm(true);
+    // Use setTimeout to ensure the form is rendered before scrolling
+    setTimeout(() => {
+      const formElement = document.querySelector('#caption-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
+  const handleSelectTemplate = (templateData) => {
+    setFormData(templateData);
+    handleTryNow();
+  };
+
   return (
     <ChakraProvider theme={theme}>
       <Flex direction="column" minH="100vh" bg="gray.50">
-        <Hero />
+        <Hero onTryNow={handleTryNow} />
         
         <Container maxW="container.xl" py={10} px={{ base: 4, md: 8 }} flex="1">
-          <Flex
-            direction={{ base: "column", lg: "row" }}
-            gap={{ base: 8, lg: 12 }}
-            mb={8}
-          >
-            <Box 
-              flex={1}
-              borderRadius="lg" 
-              overflow="hidden" 
-              bg="white"
-              boxShadow="sm"
-              p={{ base: 4, md: 6 }}
-              position="relative"
-            >
-              {isFreeTier && (
-                <Text 
-                  position="absolute" 
-                  top={2} 
-                  right={4} 
-                  fontSize="sm" 
-                  color="gray.500"
-                  fontWeight="medium"
+          {showForm ? (
+            <VStack spacing={8} align="stretch">
+              <Box 
+                w="100%"
+                maxW="800px"
+                mx="auto"
+                bg="white"
+                borderRadius="xl"
+                boxShadow="xl"
+                p={{ base: 6, md: 8 }}
+                position="relative"
+              >
+                {isFreeTier && (
+                  <Text 
+                    position="absolute" 
+                    top={4} 
+                    right={4} 
+                    fontSize="sm" 
+                    color="gray.500"
+                    fontWeight="medium"
+                    bg="gray.50"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                  >
+                    {remainingUses} free {remainingUses === 1 ? 'use' : 'uses'} remaining
+                  </Text>
+                )}
+                <CaptionForm onSubmit={handleFormSubmit} initialData={formData} />
+              </Box>
+
+              {captions.length > 0 && (
+                <Box 
+                  w="100%"
+                  maxW="800px"
+                  mx="auto"
+                  bg="white"
+                  borderRadius="xl"
+                  boxShadow="xl"
+                  p={{ base: 6, md: 8 }}
                 >
-                  {remainingUses} free {remainingUses === 1 ? 'use' : 'uses'} remaining
-                </Text>
+                  <CaptionList 
+                    captions={captions} 
+                    loading={loading} 
+                    onRegenerate={handleRegenerate} 
+                  />
+                </Box>
               )}
-              <CaptionForm onSubmit={handleFormSubmit} />
-            </Box>
-            
-            <Box flex={1}>
-              <CaptionList 
-                captions={captions} 
-                loading={loading} 
-                onRegenerate={handleRegenerate} 
-              />
-              
-              <Paywall show={showPaywall} onClose={dismissPaywall} />
-            </Box>
-          </Flex>
+            </VStack>
+          ) : (
+            <FormPreview onTryNow={handleTryNow} onSelectTemplate={handleSelectTemplate} />
+          )}
           
           <Divider my={10} />
           
@@ -154,9 +203,47 @@ function App() {
         </Container>
         
         <Footer />
+
+        <Modal isOpen={isOpen} onClose={onClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader fontSize="2xl" textAlign="center">Upgrade to Premium</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody pb={8}>
+              <VStack spacing={6} align="stretch">
+                <Text fontSize="lg" textAlign="center">
+                  You've used all your free generations. Upgrade to continue creating amazing captions!
+                </Text>
+                <Box 
+                  bg="brand.50" 
+                  p={6} 
+                  borderRadius="lg"
+                  textAlign="center"
+                >
+                  <Text fontSize="xl" fontWeight="bold" color="brand.500">
+                    Get Unlimited Generations
+                  </Text>
+                  <Text mt={2} color="gray.600">
+                    Plus access to premium features and priority support
+                  </Text>
+                </Box>
+                <Button 
+                  colorScheme="brand" 
+                  size="lg" 
+                  onClick={() => {
+                    onClose();
+                    document.getElementById('pricing-section').scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  py={6}
+                  fontSize="lg"
+                >
+                  View Premium Plans
+                </Button>
+              </VStack>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
       </Flex>
     </ChakraProvider>
-  )
+  );
 }
-
-export default App

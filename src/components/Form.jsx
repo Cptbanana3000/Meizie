@@ -3,175 +3,151 @@ import {
   VStack, Input, Textarea, Select, Tag, TagLabel,
   HStack, Button, Box, IconButton, Flex, Heading,
   FormControl, FormLabel, InputGroup, InputLeftAddon,
-  useColorModeValue
+  useColorModeValue, Badge
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 
-export default function CaptionForm({ onSubmit }) {
-  const [productName, setProductName] = useState('');
-  const [productDetails, setProductDetails] = useState('');
-  const [tone, setTone] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [keywords, setKeywords] = useState([]);
-  const [inputKeyword, setInputKeyword] = useState('');
+export default function CaptionForm({ onSubmit, initialData }) {
+  const [productName, setProductName] = useState(initialData?.productName || '');
+  const [productDetails, setProductDetails] = useState(initialData?.productDetails || '');
+  const [tone, setTone] = useState(initialData?.tone || 'Professional');
+  const [platform, setPlatform] = useState(initialData?.platform || 'Instagram');
+  const [keywords, setKeywords] = useState(initialData?.keywords || []);
+  const [newKeyword, setNewKeyword] = useState('');
 
   const formBackground = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  const handleAddKeyword = () => {
-    if (inputKeyword.trim() && !keywords.includes(inputKeyword.trim())) {
-      setKeywords([...keywords, inputKeyword.trim()]);
-      setInputKeyword('');
-    }
-  };
-
-  const handleRemoveKeyword = (index) => {
-    const newKeywords = [...keywords];
-    newKeywords.splice(index, 1);
-    setKeywords(newKeywords);
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
     onSubmit({
       productName,
-      details: productDetails,
+      productDetails,
       tone,
       platform,
       keywords
     });
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddKeyword();
+  const addKeyword = (e) => {
+    e.preventDefault();
+    if (newKeyword.trim() && !keywords.includes(newKeyword.trim())) {
+      setKeywords([...keywords, newKeyword.trim()]);
+      setNewKeyword('');
     }
   };
 
+  const removeKeyword = (keywordToRemove) => {
+    setKeywords(keywords.filter(k => k !== keywordToRemove));
+  };
+
   return (
-    <VStack spacing={6} w="100%" mx="auto">
-      <Heading size="md" alignSelf="flex-start" color="brand.500">
-        Generate Your Captions
-      </Heading>
-      
-      <FormControl>
-        <FormLabel fontWeight="medium">Product Name</FormLabel>
-        <Input
-          placeholder="e.g., 'Organic Cotton T-Shirt'"
-          size="md"
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-          borderColor={borderColor}
-          focusBorderColor="brand.400"
-        />
-      </FormControl>
-      
-      <FormControl>
-        <FormLabel fontWeight="medium">Product Details</FormLabel>
-        <Textarea
-          placeholder="Describe your product features, benefits, and target audience. The more details, the better the captions."
-          minH="150px"
-          value={productDetails}
-          onChange={(e) => setProductDetails(e.target.value)}
-          borderColor={borderColor}
-          focusBorderColor="brand.400"
-        />
-      </FormControl>
-      
-      <HStack w="100%" spacing={4}>
-        <FormControl flex="1">
-          <FormLabel fontWeight="medium">Tone</FormLabel>
-          <Select 
-            placeholder="Select Tone"
-            value={tone}
-            onChange={(e) => setTone(e.target.value)}
-            borderColor={borderColor}
-            focusBorderColor="brand.400"
-          >
-            <option value="friendly">😊 Friendly</option>
-            <option value="urgent">⏳ Urgent</option>
-            <option value="luxury">💎 Luxury</option>
-            <option value="casual">👌 Casual</option>
-          </Select>
-        </FormControl>
+    <Box as="form" onSubmit={handleSubmit} id="caption-form">
+      <VStack spacing={6} w="100%" mx="auto">
+        <Heading size="md" alignSelf="flex-start" color="brand.500">
+          Generate Your Captions
+        </Heading>
         
-        <FormControl flex="1">
-          <FormLabel fontWeight="medium">Platform</FormLabel>
-          <Select 
-            placeholder="Select Platform"
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
-            borderColor={borderColor}
-            focusBorderColor="brand.400"
-          >
-            <option value="instagram">Instagram</option>
-            <option value="tiktok">TikTok</option>
-            <option value="facebook">Facebook</option>
-            <option value="amazon">Amazon</option>
-          </Select>
-        </FormControl>
-      </HStack>
-      
-      <FormControl>
-        <FormLabel fontWeight="medium">Keywords</FormLabel>
-        <InputGroup mb={2}>
-          <InputLeftAddon children="#" backgroundColor="gray.100" />
+        <FormControl isRequired>
+          <FormLabel fontWeight="medium">Product Name</FormLabel>
           <Input
-            placeholder="Add keyword (e.g., 'sustainable')"
-            value={inputKeyword}
-            onChange={(e) => setInputKeyword(e.target.value)}
-            onKeyDown={handleKeyPress}
-            borderColor={borderColor}
-            focusBorderColor="brand.400"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder="e.g., 'Organic Cotton T-Shirt'"
+            size="md"
           />
-          <Button 
-            colorScheme="accent" 
-            onClick={handleAddKeyword}
-            ml={2}
-          >
-            Add
-          </Button>
-        </InputGroup>
+        </FormControl>
         
-        <Box w="100%" minH="50px">
-          <Flex wrap="wrap" gap={2}>
-            {keywords.map((kw, i) => (
-              <Tag key={i} colorScheme="brand" size="md" borderRadius="full">
-                <TagLabel>#{kw}</TagLabel>
-                <IconButton
-                  aria-label={`Remove ${kw}`}
-                  icon={<CloseIcon />}
-                  size="xs"
-                  ml={1}
-                  onClick={() => handleRemoveKeyword(i)}
-                  variant="unstyled"
-                  h="auto"
-                  minW="auto"
-                  p={0}
-                />
-              </Tag>
-            ))}
-          </Flex>
-        </Box>
-      </FormControl>
-      
-      <Button 
-        colorScheme="brand" 
-        size="lg" 
-        onClick={handleSubmit}
-        isDisabled={!productName || !productDetails || !tone || !platform}
-        w="100%"
-        mt={4}
-        py={6}
-        boxShadow="md"
-        _hover={{
-          transform: 'translateY(-2px)',
-          boxShadow: 'lg',
-        }}
-        transition="all 0.2s"
-      >
-        Generate My Captions
-      </Button>
-    </VStack>
+        <FormControl isRequired>
+          <FormLabel fontWeight="medium">Product Details</FormLabel>
+          <Textarea
+            value={productDetails}
+            onChange={(e) => setProductDetails(e.target.value)}
+            placeholder="Describe your product features, benefits, and target audience..."
+            minH="100px"
+          />
+        </FormControl>
+        
+        <FormControl isRequired>
+          <FormLabel fontWeight="medium">Tone</FormLabel>
+          <Select value={tone} onChange={(e) => setTone(e.target.value)}>
+            <option value="Professional">Professional</option>
+            <option value="Casual">Casual</option>
+            <option value="Fashionable">Fashionable</option>
+            <option value="Technical">Technical</option>
+            <option value="Appetizing">Appetizing</option>
+            <option value="Luxurious">Luxurious</option>
+          </Select>
+        </FormControl>
+        
+        <FormControl isRequired>
+          <FormLabel fontWeight="medium">Platform</FormLabel>
+          <Select value={platform} onChange={(e) => setPlatform(e.target.value)}>
+            <option value="Instagram">Instagram</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Amazon">Amazon</option>
+            <option value="Shopify">Shopify</option>
+            <option value="Etsy">Etsy</option>
+          </Select>
+        </FormControl>
+        
+        <FormControl>
+          <FormLabel fontWeight="medium">Keywords (Optional)</FormLabel>
+          <InputGroup>
+            <Input
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              placeholder="Add keywords to include in captions"
+              onKeyPress={(e) => e.key === 'Enter' && addKeyword(e)}
+            />
+            <InputLeftAddon
+              as="button"
+              type="button"
+              onClick={addKeyword}
+              cursor="pointer"
+              bg="brand.500"
+              color="white"
+              _hover={{ bg: 'brand.600' }}
+            >
+              Add
+            </InputLeftAddon>
+          </InputGroup>
+          
+          {keywords.length > 0 && (
+            <Box mt={2}>
+              {keywords.map((keyword, index) => (
+                <Badge
+                  key={index}
+                  m={1}
+                  p={2}
+                  borderRadius="md"
+                  colorScheme="brand"
+                  cursor="pointer"
+                  onClick={() => removeKeyword(keyword)}
+                >
+                  {keyword} ×
+                </Badge>
+              ))}
+            </Box>
+          )}
+        </FormControl>
+        
+        <Button
+          type="submit"
+          colorScheme="brand"
+          size="lg"
+          w="100%"
+          py={6}
+          boxShadow="md"
+          _hover={{
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg',
+          }}
+          transition="all 0.2s"
+        >
+          Generate My Captions
+        </Button>
+      </VStack>
+    </Box>
   );
 } 

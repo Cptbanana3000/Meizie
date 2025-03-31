@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { 
   VStack, Box, Text, Button, useToast, 
   Divider, HStack, Spinner, Flex, Heading,
-  Badge
+  Badge, useColorModeValue, Center
 } from '@chakra-ui/react';
 import { CopyIcon, CheckIcon } from '@chakra-ui/icons';
+import { FaCopy, FaRegCopy } from 'react-icons/fa';
 
 export default function CaptionList({ captions, loading, onRegenerate }) {
   const toast = useToast();
   const [copied, setCopied] = useState(null);
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   const handleCopy = (text, index) => {
     navigator.clipboard.writeText(text)
@@ -37,131 +40,92 @@ export default function CaptionList({ captions, loading, onRegenerate }) {
 
   if (loading) {
     return (
-      <Flex 
-        direction="column" 
-        align="center" 
-        justify="center" 
-        p={8} 
-        minH="300px"
-        bg="white"
-        borderRadius="lg"
-        boxShadow="sm"
-      >
-        <Spinner 
-          size="xl" 
-          color="brand.500" 
-          thickness="3px" 
-          speed="0.8s"
-          mb={6}
-        />
-        <Heading size="md" color="gray.700" mb={2}>
-          Meizie AI is working...
-        </Heading>
-        <Text fontSize="md" color="gray.500">
-          Creating high-converting captions just for you
-        </Text>
-        <Text fontSize="sm" color="gray.400" mt={2}>
-          This usually takes a few seconds
-        </Text>
-      </Flex>
+      <Center py={20}>
+        <VStack spacing={6}>
+          <Spinner size="xl" color="brand.500" thickness="4px" />
+          <Heading size="lg" color="gray.700">Generating Captions...</Heading>
+          <Text color="gray.600" textAlign="center" maxW="md">
+            Our AI is crafting the perfect captions for your product. This may take a few seconds.
+          </Text>
+        </VStack>
+      </Center>
     );
   }
 
   if (!captions || captions.length === 0) {
     return (
       <Box 
-        p={6} 
-        bg="white"
-        borderRadius="lg"
-        boxShadow="sm"
-        minH="300px"
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
+        p={8} 
+        bg={bgColor} 
+        borderRadius="lg" 
+        border="1px" 
+        borderColor={borderColor}
+        textAlign="center"
       >
-        <Box 
-          bg="gray.50" 
-          p={6} 
-          borderRadius="md"
-          textAlign="center"
-          w="100%"
-        >
-          <Heading size="md" color="gray.600" mb={3}>
-            Your AI-Generated Captions
-          </Heading>
-          <Text fontSize="md" color="gray.500">
-            Fill out the form and click "Generate My Captions" to create engaging product descriptions.
-          </Text>
-          <Text fontSize="sm" mt={4} color="brand.500" fontWeight="medium">
-            3 free generations available
-          </Text>
-        </Box>
+        <Heading size="lg" mb={4} color="gray.700">No Captions Yet</Heading>
+        <Text color="gray.600" mb={6}>
+          Fill out the form above to generate engaging captions for your product.
+        </Text>
+        <Text fontSize="sm" color="gray.500">
+          Get 3 free generations to try it out!
+        </Text>
       </Box>
     );
   }
 
   return (
-    <VStack spacing={4} align="stretch" w="100%" p={6} bg="white" borderRadius="lg" boxShadow="sm">
-      <Flex justify="space-between" align="center">
-        <Heading size="md" color="brand.500">
-          Your AI-Generated Captions
-        </Heading>
-        <Badge colorScheme="green" p={1} borderRadius="md">
-          {captions.length} captions
+    <VStack spacing={6} align="stretch">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Heading size="lg" color="gray.700">Generated Captions</Heading>
+        <Badge colorScheme="brand" fontSize="sm" px={3} py={1}>
+          {captions.length} {captions.length === 1 ? 'caption' : 'captions'}
         </Badge>
-      </Flex>
-      
-      <Divider />
+      </Box>
       
       {captions.map((caption, index) => (
-        <Box 
-          key={index} 
-          p={4} 
-          bg={copied === index ? "green.50" : "gray.50"} 
-          borderRadius="md" 
-          borderLeft="4px solid"
-          borderLeftColor={copied === index ? "green.400" : "brand.400"}
-          boxShadow="sm"
+        <Box
+          key={index}
+          p={6}
+          bg={bgColor}
+          borderRadius="lg"
+          border="1px"
+          borderColor={borderColor}
           position="relative"
-          _hover={{ 
-            boxShadow: "md",
-            bg: copied === index ? "green.50" : "gray.100" 
-          }}
           transition="all 0.2s"
+          _hover={{
+            transform: 'translateY(-2px)',
+            boxShadow: 'md',
+            borderColor: 'brand.300',
+          }}
         >
-          <Text whiteSpace="pre-wrap">{caption}</Text>
-          
+          <Text fontSize="lg" color="gray.700" mb={4}>
+            {caption}
+          </Text>
           <Button
             size="sm"
-            position="absolute"
-            top="8px"
-            right="8px"
-            onClick={() => handleCopy(caption, index)}
-            colorScheme={copied === index ? "green" : "gray"}
             variant="ghost"
-            leftIcon={copied === index ? <CheckIcon /> : <CopyIcon />}
+            colorScheme="brand"
+            position="absolute"
+            top={4}
+            right={4}
+            onClick={() => handleCopy(caption, index)}
+            leftIcon={copied === index ? <FaCopy /> : <FaRegCopy />}
           >
-            {copied === index ? "Copied" : "Copy"}
+            {copied === index ? 'Copied!' : 'Copy'}
           </Button>
         </Box>
       ))}
       
-      <HStack spacing={4} justify="center" mt={4}>
-        <Button 
-          colorScheme="brand" 
-          onClick={onRegenerate}
-          isDisabled={loading}
-          boxShadow="sm"
-          _hover={{
-            transform: 'translateY(-2px)',
-            boxShadow: 'md',
-          }}
-          transition="all 0.2s"
-        >
-          Generate More Variations
-        </Button>
-      </HStack>
+      <Button
+        colorScheme="brand"
+        size="lg"
+        onClick={onRegenerate}
+        mt={4}
+        py={6}
+        fontSize="lg"
+      >
+        Generate More Variations
+      </Button>
     </VStack>
   );
 } 
